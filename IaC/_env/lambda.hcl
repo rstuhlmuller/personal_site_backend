@@ -14,4 +14,8 @@ inputs = {
   project_name    = local.common_vars.project_name
   path_to_go_file = "${dirname(find_in_parent_folders())}/../cmd/main.go"
   base_url        = local.account_vars.fqdn
+
+  routes = {}
+
+  iam_permissions = {}
 }
