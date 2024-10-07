@@ -13,6 +13,12 @@ locals {
 }
 
 terraform {
+  extra_arguments "plan" {
+    commands = ["plan"]
+    arguments = [
+      "-out=plan.out"
+    ]
+  }
   after_hook "after_hook" {
     commands     = ["apply", "plan"]
     execute      = ["echo", "Finished running Terraform"]
