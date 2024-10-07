@@ -12,13 +12,17 @@ data "aws_iam_policy_document" "assume_role" {
 }
 
 resource "aws_iam_role" "iam_for_lambda" {
-  name               = join("-", [var.account_name, local.region_short, "IAM-Role", var.project_name, "Lambda"])
-  assume_role_policy = data.aws_iam_policy_document.assume_role.json
+  name                = join("-", [var.account_name, local.region_short, "IAM-Role", var.project_name, "Lambda"])
+  assume_role_policy  = data.aws_iam_policy_document.assume_role.json
+  managed_policy_arns = ["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]
 }
 
 resource "null_resource" "go_build" {
+  triggers = {
+    "code_sha" = sha1(join("", [for f in fileset(path.cwd, "*") : filesha1("${path.cwd}/${f}")])) # TODO: fix with actual go files
+  }
   provisioner "local-exec" {
-    command = "go build -tags lambda.norpc -o bootstrap ${var.path_to_go_file}"
+    command = "GOOS=linux GOARCH=amd64 go build -tags lambda.norpc -o bootstrap ${var.path_to_go_file}"
   }
 }
 

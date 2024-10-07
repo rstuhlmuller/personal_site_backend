@@ -3,28 +3,6 @@ resource "aws_api_gateway_rest_api" "main" {
   description = "API Gateway for ${var.project_name}"
 }
 
-resource "aws_api_gateway_resource" "default" {
-  rest_api_id = aws_api_gateway_rest_api.main.id
-  parent_id   = aws_api_gateway_rest_api.main.root_resource_id
-  path_part   = "$default"
-}
-
-resource "aws_api_gateway_method" "any" {
-  rest_api_id   = aws_api_gateway_rest_api.main.id
-  resource_id   = aws_api_gateway_resource.default.id
-  http_method   = "ANY"
-  authorization = "NONE"
-}
-
-resource "aws_api_gateway_integration" "integration" {
-  rest_api_id             = aws_api_gateway_rest_api.main.id
-  resource_id             = aws_api_gateway_resource.default.id
-  http_method             = aws_api_gateway_method.any.http_method
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.function.invoke_arn
-}
-
 resource "aws_api_gateway_domain_name" "api" {
   domain_name     = "api.${var.base_url}"
   certificate_arn = "arn:aws:acm:us-east-1:716182248480:certificate/4e6112a6-21da-4952-a44d-1df9d3a4c20f"
@@ -60,7 +38,7 @@ resource "aws_lambda_permission" "apigw_lambda" {
   principal     = "apigateway.amazonaws.com"
 
   # More: http://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-control-access-using-iam-policies-to-invoke-api.html
-  source_arn = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${aws_api_gateway_rest_api.main.id}/*/${aws_api_gateway_method.any.http_method}${aws_api_gateway_resource.default.path}"
+  source_arn = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${aws_api_gateway_rest_api.main.id}/*/*"
 }
 
 # Deployment
@@ -69,7 +47,7 @@ resource "aws_api_gateway_deployment" "latest" {
   rest_api_id = aws_api_gateway_rest_api.main.id
 
   triggers = {
-    redeployment = sha1(jsonencode(aws_api_gateway_rest_api.main.body))
+    redeployment = timestamp()
   }
 
   lifecycle {
@@ -81,4 +59,25 @@ resource "aws_api_gateway_stage" "latest" {
   deployment_id = aws_api_gateway_deployment.latest.id
   rest_api_id   = aws_api_gateway_rest_api.main.id
   stage_name    = "latest"
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.apigw.arn
+    format = jsonencode({
+      requestId         = "$context.requestId",
+      extendedRequestId = "$context.extendedRequestId",
+      ip                = "$context.identity.sourceIp",
+      caller            = "$context.identity.caller",
+      user              = "$context.identity.user",
+      requestTime       = "$context.requestTime",
+      httpMethod        = "$context.httpMethod",
+      resourcePath      = "$context.resourcePath",
+      status            = "$context.status",
+      protocol          = "$context.protocol",
+      responseLength    = "$context.responseLength"
+    })
+  }
+}
+
+resource "aws_cloudwatch_log_group" "apigw" {
+  name              = "API-Gateway-Execution-Logs_${aws_api_gateway_rest_api.main.id}/latest"
+  retention_in_days = 7
 }
