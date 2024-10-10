@@ -28,3 +28,8 @@ variable "base_url" {
   type        = string
   description = "Base URL"
 }
+
+variable "dynamodb_table" {
+  type        = string
+  description = "Name of the DynamoDB table"
+}

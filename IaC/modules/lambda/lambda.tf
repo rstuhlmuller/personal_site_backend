@@ -44,4 +44,10 @@ resource "aws_lambda_function" "function" {
   source_code_hash = data.archive_file.lambda.output_base64sha256
 
   runtime = "provided.al2023"
+
+  environment {
+    variables = {
+      DYNAMODB_TABLE = var.dynamodb_table
+    }
+  }
 }
