@@ -1,15 +1,21 @@
 // root
-# resource "aws_api_gateway_method" "root_GET" {
+# resource "aws_api_gateway_resource" "root" {
+#   parent_id   = aws_api_gateway_rest_api.main.root_resource_id
+#   path_part   = "{proxy+}"
+#   rest_api_id = aws_api_gateway_rest_api.main.id
+# }
+
+# resource "aws_api_gateway_method" "root" {
 #   authorization = "NONE"
 #   http_method   = "ANY"
-#   resource_id   = aws_api_gateway_rest_api.main.root_resource_id
+#   resource_id   = aws_api_gateway_resource.root.id
 #   rest_api_id   = aws_api_gateway_rest_api.main.id
 # }
 
-# resource "aws_api_gateway_integration" "root_GET" {
-#   http_method             = aws_api_gateway_method.root_GET.http_method
+# resource "aws_api_gateway_integration" "root" {
+#   http_method             = aws_api_gateway_method.root.http_method
 #   integration_http_method = "POST"
-#   resource_id             = aws_api_gateway_rest_api.main.root_resource_id
+#   resource_id             = aws_api_gateway_resource.root.id
 #   rest_api_id             = aws_api_gateway_rest_api.main.id
 #   type                    = "AWS_PROXY"
 #   uri                     = aws_lambda_function.function.invoke_arn

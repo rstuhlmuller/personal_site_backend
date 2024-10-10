@@ -11,6 +11,29 @@ data "aws_iam_policy_document" "assume_role" {
   }
 }
 
+resource "aws_iam_role_policy" "dynamodb" {
+  name = join("-", [var.account_name, local.region_short, "IAM-Role-Policy", var.project_name, "DynamoDB"])
+
+  role   = aws_iam_role.iam_for_lambda.id
+  policy = data.aws_iam_policy_document.dynamodb.json
+}
+
+data "aws_iam_policy_document" "dynamodb" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "dynamodb:GetItem",
+      "dynamodb:PutItem",
+      "dynamodb:UpdateItem",
+      "dynamodb:DeleteItem"
+    ]
+    resources = [
+      var.db_arn
+    ]
+  }
+}
+
 resource "aws_iam_role" "iam_for_lambda" {
   name                = join("-", [var.account_name, local.region_short, "IAM-Role", var.project_name, "Lambda"])
   assume_role_policy  = data.aws_iam_policy_document.assume_role.json

@@ -19,4 +19,5 @@ inputs = {
   path_to_go_file = "${dirname(find_in_parent_folders())}/../cmd/main.go"
   base_url        = local.account_vars.fqdn
   dynamodb_table  = dependency.dynamodb.outputs.dynamodb_table
+  db_arn          = dependency.dynamodb.outputs.db_arn
 }

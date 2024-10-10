@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -85,7 +86,9 @@ func (db *DynamoDB) GetVisitorCount(ctx context.Context) (int, error) {
 			"id": &types.AttributeValueMemberS{Value: "visitor_count"},
 		},
 	})
+	log.Printf("Table name: %s", db.table)
 	if err != nil {
+		log.Printf("failed to get visitor count: %v", err)
 		return 0, fmt.Errorf("failed to get visitor count: %v", err)
 	}
 
