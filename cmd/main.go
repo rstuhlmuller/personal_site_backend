@@ -3,31 +3,35 @@ package main
 import (
 	"context"
 
-	"rstuhlmuller/personal_site_backend/internal/helpers"
-
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	fiberadapter "github.com/awslabs/aws-lambda-go-api-proxy/fiber"
-	"github.com/gofiber/fiber/v2"
+	"github.com/rstuhlmuller/personal_site_backend/internal/db"
+	"github.com/rstuhlmuller/personal_site_backend/internal/handlers"
+	"github.com/rstuhlmuller/personal_site_backend/pkg/utils"
 )
 
-var fiberLambda *fiberadapter.FiberLambda
-
-func main() {
-	app := fiber.New()
-
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("Hello, World!")
-	})
-
-	if helpers.IsLambda() {
-		fiberLambda = fiberadapter.New(app)
-		lambda.Start(Handler)
-	} else {
-		app.Listen(":3000")
+func router(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	dynamoDB, err := db.NewDynamoDB()
+	if err != nil {
+		return events.APIGatewayProxyResponse{}, err
 	}
+
+	switch req.HTTPMethod {
+	case "GET":
+		if req.Resource == "/visitor-count" {
+			return handlers.GetVisitorCount(ctx, req, dynamoDB)
+		}
+		// ... other GET routes ...
+	case "POST":
+		if req.Resource == "/visitor-count" {
+			return handlers.IncrementVisitorCount(ctx, req, dynamoDB)
+		}
+		// ... other POST routes ...
+	}
+
+	return utils.ErrorResponse(404, "Not Found")
 }
 
-func Handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	return fiberLambda.ProxyWithContext(ctx, request)
+func main() {
+	lambda.Start(router)
 }

@@ -1,18 +1,12 @@
 resource "aws_dynamodb_table" "basic-dynamodb-table" {
-  name           = join("-", [var.account_name, local.region_short, "DDB", var.project_name])
-  billing_mode   = "PAY_PER_REQUEST"
-#   read_capacity  = 20
-#   write_capacity = 20
-  hash_key       = "ID"
-  range_key      = "ProjectName"
+  name         = join("-", [var.account_name, local.region_short, "DDB", var.project_name])
+  billing_mode = "PAY_PER_REQUEST"
+  #   read_capacity  = 20
+  #   write_capacity = 20
+  hash_key = "id"
 
   attribute {
-    name = "ID"
-    type = "S"
-  }
-
-  attribute {
-    name = "ProjectName"
+    name = "id"
     type = "S"
   }
 
