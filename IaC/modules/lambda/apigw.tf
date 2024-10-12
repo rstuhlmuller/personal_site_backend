@@ -81,3 +81,4 @@ resource "aws_cloudwatch_log_group" "apigw" {
   name              = "API-Gateway-Execution-Logs_${aws_api_gateway_rest_api.main.id}/latest"
   retention_in_days = 7
 }
+
