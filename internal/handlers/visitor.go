@@ -14,8 +14,7 @@ import (
 
 func IncrementVisitorCount(ctx context.Context, req events.APIGatewayProxyRequest, dynamoDB db.DynamoDBInterface) (events.APIGatewayProxyResponse, error) {
 	visitorInfo := models.NewVisitorLog(
-		req.RequestContext.Identity.SourceIP,
-		req.RequestContext.Identity.UserAgent,
+		// req.RequestContext.Identity.SourceIP,
 		req.Headers["Referer"],
 	)
 
