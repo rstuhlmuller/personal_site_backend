@@ -9,9 +9,6 @@
 			"installTerraformDocs": true,
 			"version": "1.9.7",
 			"terragrunt": "latest"
-		},
-		"ghcr.io/audacioustux/devcontainers/aws-sam-cli": {
-			"version": "latest"
 		}
 	},
 	"customizations": {
