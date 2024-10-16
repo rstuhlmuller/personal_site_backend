@@ -19,7 +19,7 @@ import (
 type DynamoDBInterface interface {
 	IncrementVisitorCount(ctx context.Context, visitorInfo *models.VisitorItem) (int, error)
 	GetVisitorCount(ctx context.Context) (int, error)
-	GetVisitorLog(ctx context.Context) ([]*models.VisitorItem, error)
+	GetVisitorLog(ctx context.Context) ([]*models.VisitorItem, error) // Note the pointer here
 }
 
 type DynamoDB struct {
@@ -133,7 +133,7 @@ func (db *DynamoDB) GetVisitorCount(ctx context.Context) (int, error) {
 	return count.Count, nil
 }
 
-func (db *DynamoDB) GetVisitorLog(ctx context.Context) ([]models.VisitorItem, error) {
+func (db *DynamoDB) GetVisitorLog(ctx context.Context) ([]*models.VisitorItem, error) {
 	input := &dynamodb.ScanInput{
 		TableName:        aws.String(db.table),
 		FilterExpression: aws.String("#type = :logType"),
@@ -150,7 +150,7 @@ func (db *DynamoDB) GetVisitorLog(ctx context.Context) ([]models.VisitorItem, er
 		return nil, fmt.Errorf("failed to get visitor log: %w", err)
 	}
 
-	var logs []models.VisitorItem
+	var logs []*models.VisitorItem // Note the pointer here
 	err = attributevalue.UnmarshalListOfMaps(result.Items, &logs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal visitor logs: %w", err)

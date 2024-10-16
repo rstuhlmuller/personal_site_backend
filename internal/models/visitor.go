@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	CountItemID = "VISITOR_COUNT"
+	CountItemID = "visitor_count"
 )
 
 type VisitorItem struct {
