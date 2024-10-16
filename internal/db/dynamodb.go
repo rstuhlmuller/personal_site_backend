@@ -110,8 +110,7 @@ func (db *DynamoDB) GetVisitorCount(ctx context.Context) (int, error) {
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String(db.table),
 		Key: map[string]types.AttributeValue{
-			"id":   &types.AttributeValueMemberS{Value: models.CountItemID},
-			"type": &types.AttributeValueMemberS{Value: "count"},
+			"id": &types.AttributeValueMemberS{Value: models.CountItemID},
 		},
 	}
 
@@ -121,10 +120,13 @@ func (db *DynamoDB) GetVisitorCount(ctx context.Context) (int, error) {
 	}
 
 	if result.Item == nil {
+		// If the item doesn't exist, return 0 as the count
 		return 0, nil
 	}
 
-	var count models.VisitorItem
+	var count struct {
+		Count int `dynamodbav:"count"`
+	}
 	err = attributevalue.UnmarshalMap(result.Item, &count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to unmarshal visitor count: %v", err)
@@ -134,6 +136,8 @@ func (db *DynamoDB) GetVisitorCount(ctx context.Context) (int, error) {
 }
 
 func (db *DynamoDB) GetVisitorLog(ctx context.Context) ([]*models.VisitorItem, error) {
+	log.Printf("Attempting to get visitor log from table: %s", db.table)
+
 	input := &dynamodb.ScanInput{
 		TableName:        aws.String(db.table),
 		FilterExpression: aws.String("#type = :logType"),
@@ -145,16 +149,29 @@ func (db *DynamoDB) GetVisitorLog(ctx context.Context) ([]*models.VisitorItem, e
 		},
 	}
 
+	log.Printf("ScanInput: %+v", input)
+
 	result, err := db.client.Scan(ctx, input)
 	if err != nil {
+		log.Printf("Error scanning table: %v", err)
 		return nil, fmt.Errorf("failed to get visitor log: %w", err)
 	}
 
-	var logs []*models.VisitorItem // Note the pointer here
+	log.Printf("Scan result: %+v", result)
+
+	if len(result.Items) == 0 {
+		log.Printf("No items found in scan result")
+		return []*models.VisitorItem{}, nil
+	}
+
+	var logs []*models.VisitorItem
 	err = attributevalue.UnmarshalListOfMaps(result.Items, &logs)
 	if err != nil {
+		log.Printf("Error unmarshalling visitor logs: %v", err)
 		return nil, fmt.Errorf("failed to unmarshal visitor logs: %w", err)
 	}
+
+	log.Printf("Successfully retrieved %d log entries", len(logs))
 
 	return logs, nil
 }

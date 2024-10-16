@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -37,7 +39,8 @@ func GetVisitorCount(ctx context.Context, req events.APIGatewayProxyRequest, dyn
 func GetVisitorLog(ctx context.Context, req events.APIGatewayProxyRequest, dynamoDB db.DynamoDBInterface) (events.APIGatewayProxyResponse, error) {
 	logs, err := dynamoDB.GetVisitorLog(ctx)
 	if err != nil {
-		return utils.ErrorResponse(http.StatusInternalServerError, "Failed to get visitor log")
+		log.Printf("Error in GetVisitorLog: %v", err)
+		return utils.ErrorResponse(http.StatusInternalServerError, fmt.Sprintf("Failed to get visitor log: %v", err))
 	}
 
 	return utils.JSONResponse(http.StatusOK, logs)
