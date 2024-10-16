@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"log"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -17,8 +16,6 @@ func IncrementVisitorCount(ctx context.Context, req events.APIGatewayProxyReques
 		req.RequestContext.Identity.UserAgent,
 		req.Headers["Referer"],
 	)
-
-	log.Printf("Visitor info: %v", visitorInfo)
 
 	count, err := dynamoDB.IncrementVisitorCount(ctx, visitorInfo)
 	if err != nil {

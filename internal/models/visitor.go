@@ -18,18 +18,8 @@ type VisitorItem struct {
 	Timestamp time.Time `json:"timestamp" dynamodbav:"timestamp"`
 }
 
-func NewVisitorCount() *VisitorItem {
-	return &VisitorItem{
-		ID:        CountItemID,
-		Type:      "count",
-		Count:     0,
-		Timestamp: time.Now().UTC(),
-	}
-}
-
 func NewVisitorLog(ip, userAgent, referer string) *VisitorItem {
 	return &VisitorItem{
-		ID:        time.Now().UTC().Format(time.RFC3339Nano), // Use timestamp as ID for uniqueness
 		Type:      "log",
 		IP:        ip,
 		UserAgent: userAgent,

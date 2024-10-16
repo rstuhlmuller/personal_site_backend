@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/google/uuid"
 	"github.com/rstuhlmuller/personal_site_backend/internal/models"
 )
 
@@ -45,13 +46,13 @@ func NewDynamoDB() (*DynamoDB, error) {
 }
 
 func (db *DynamoDB) IncrementVisitorCount(ctx context.Context, visitorInfo *models.VisitorItem) (int, error) {
-	log.Printf("Attempting to increment visitor count in table: %s", db.table)
+	log.Printf("Attempting to increment visitor count and log visit in table: %s", db.table)
 
+	// First, increment the count
 	updateInput := &dynamodb.UpdateItemInput{
 		TableName: aws.String(db.table),
 		Key: map[string]types.AttributeValue{
 			"id": &types.AttributeValueMemberS{Value: models.CountItemID},
-			// Remove the 'type' key if your table doesn't have a sort key
 		},
 		UpdateExpression: aws.String("SET #count = if_not_exists(#count, :zero) + :incr, #timestamp = :now"),
 		ExpressionAttributeNames: map[string]string{
@@ -66,18 +67,11 @@ func (db *DynamoDB) IncrementVisitorCount(ctx context.Context, visitorInfo *mode
 		ReturnValues: types.ReturnValueUpdatedNew,
 	}
 
-	log.Printf("UpdateInput: %+v", updateInput)
-	log.Printf("UpdateInput Key: %+v", updateInput.Key)
-	log.Printf("UpdateInput ExpressionAttributeNames: %+v", updateInput.ExpressionAttributeNames)
-	log.Printf("UpdateInput ExpressionAttributeValues: %+v", updateInput.ExpressionAttributeValues)
-
 	updateResult, err := db.client.UpdateItem(ctx, updateInput)
 	if err != nil {
 		log.Printf("Error incrementing visitor count: %v", err)
 		return 0, fmt.Errorf("failed to increment visitor count: %w", err)
 	}
-
-	log.Printf("Update result: %+v", updateResult)
 
 	var updatedCount models.VisitorItem
 	err = attributevalue.UnmarshalMap(updateResult.Attributes, &updatedCount)
@@ -86,7 +80,28 @@ func (db *DynamoDB) IncrementVisitorCount(ctx context.Context, visitorInfo *mode
 		return 0, fmt.Errorf("failed to unmarshal updated count: %w", err)
 	}
 
-	log.Printf("Updated count: %d", updatedCount.Count)
+	// Now, log the visitor info
+	visitorInfo.ID = uuid.New().String()
+	visitorInfo.Timestamp = time.Now().UTC()
+
+	item, err := attributevalue.MarshalMap(visitorInfo)
+	if err != nil {
+		log.Printf("Error marshalling visitor info: %v", err)
+		return 0, fmt.Errorf("failed to marshal visitor info: %w", err)
+	}
+
+	putInput := &dynamodb.PutItemInput{
+		TableName: aws.String(db.table),
+		Item:      item,
+	}
+
+	_, err = db.client.PutItem(ctx, putInput)
+	if err != nil {
+		log.Printf("Error logging visitor info: %v", err)
+		return 0, fmt.Errorf("failed to log visitor info: %w", err)
+	}
+
+	log.Printf("Successfully incremented count to %d and logged visit", updatedCount.Count)
 
 	return updatedCount.Count, nil
 }
