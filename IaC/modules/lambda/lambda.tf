@@ -29,7 +29,8 @@ data "aws_iam_policy_document" "dynamodb" {
       "dynamodb:DeleteItem"
     ]
     resources = [
-      var.db_arn
+      var.db_arn,
+      "${var.db_arn}/*"
     ]
   }
 }
