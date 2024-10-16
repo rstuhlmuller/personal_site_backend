@@ -133,10 +133,10 @@ func (db *DynamoDB) GetVisitorCount(ctx context.Context) (int, error) {
 	return count.Count, nil
 }
 
-func (db *DynamoDB) GetVisitorLog(ctx context.Context) ([]*models.VisitorItem, error) {
-	input := &dynamodb.QueryInput{
-		TableName:              aws.String(db.table),
-		KeyConditionExpression: aws.String("#type = :logType"),
+func (db *DynamoDB) GetVisitorLog(ctx context.Context) ([]models.VisitorItem, error) {
+	input := &dynamodb.ScanInput{
+		TableName:        aws.String(db.table),
+		FilterExpression: aws.String("#type = :logType"),
 		ExpressionAttributeNames: map[string]string{
 			"#type": "type",
 		},
@@ -145,15 +145,15 @@ func (db *DynamoDB) GetVisitorLog(ctx context.Context) ([]*models.VisitorItem, e
 		},
 	}
 
-	result, err := db.client.Query(ctx, input)
+	result, err := db.client.Scan(ctx, input)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get visitor log: %v", err)
+		return nil, fmt.Errorf("failed to get visitor log: %w", err)
 	}
 
-	var logs []*models.VisitorItem
+	var logs []models.VisitorItem
 	err = attributevalue.UnmarshalListOfMaps(result.Items, &logs)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal visitor logs: %v", err)
+		return nil, fmt.Errorf("failed to unmarshal visitor logs: %w", err)
 	}
 
 	return logs, nil
