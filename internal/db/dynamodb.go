@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -51,8 +50,8 @@ func (db *DynamoDB) IncrementVisitorCount(ctx context.Context, visitorInfo *mode
 	updateInput := &dynamodb.UpdateItemInput{
 		TableName: aws.String(db.table),
 		Key: map[string]types.AttributeValue{
-			"id":   &types.AttributeValueMemberS{Value: models.CountItemID},
-			"type": &types.AttributeValueMemberS{Value: "count"},
+			"id": &types.AttributeValueMemberS{Value: models.CountItemID},
+			// Remove the 'type' key if your table doesn't have a sort key
 		},
 		UpdateExpression: aws.String("SET #count = if_not_exists(#count, :zero) + :incr, #timestamp = :now"),
 		ExpressionAttributeNames: map[string]string{
@@ -75,14 +74,6 @@ func (db *DynamoDB) IncrementVisitorCount(ctx context.Context, visitorInfo *mode
 	updateResult, err := db.client.UpdateItem(ctx, updateInput)
 	if err != nil {
 		log.Printf("Error incrementing visitor count: %v", err)
-		// Check for specific error types
-		var notFoundErr *types.ResourceNotFoundException
-		var conditionalCheckFailedErr *types.ConditionalCheckFailedException
-		if errors.As(err, &notFoundErr) {
-			log.Printf("Table or item not found: %v", notFoundErr)
-		} else if errors.As(err, &conditionalCheckFailedErr) {
-			log.Printf("Conditional check failed: %v", conditionalCheckFailedErr)
-		}
 		return 0, fmt.Errorf("failed to increment visitor count: %w", err)
 	}
 
