@@ -31,7 +31,7 @@ data "aws_iam_policy_document" "dynamodb" {
     ]
     resources = [
       var.db_arn,
-      "${var.db_arn}/*"
+      "${var.db_arn}/index/*"
     ]
   }
 }
